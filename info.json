@@ -1,0 +1,10 @@
+{
+  "name": "RecipeLogisticRequest",
+  "version": "1.0.0",
+  "title": "Recipe Logistic Request",
+  "author": "Atria",
+  "contact": "tomas.chmelik2@gmail.com",
+  "factorio_version": "1.1",
+  "dependencies": ["base >= 1.1"],
+  "description": "Mod which allows you to increasing/decreasing your personal logistic requests by clicking on recipes. Supports either requesting recipe result or its ingredients."
+}
