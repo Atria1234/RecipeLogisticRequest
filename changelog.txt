@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.1.0
+Date: 2023-01-07
+  Feature:
+    - Added key bindings for increase/decrease request of result/ingredients by 5
+  Bugfix:
+    - Modified default key bindings to behave more like normal crafting, decreasing actions doesn't have default key bindings anymore.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Date: 2023-01-07
   Bugfix:

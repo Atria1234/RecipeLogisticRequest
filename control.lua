@@ -50,16 +50,6 @@ function modify_requests(character, items)
     end
 end
 
-function get_valid_event_character(event)
-    local player = game.players[event.player_index]
-    if event.selected_prototype and event.selected_prototype.base_type == "recipe" then
-        if player ~= nil and player.valid and player.character ~= nil and player.character.valid then
-            return player.character
-        end
-    end
-    return nil
-end
-
 function get_recipe_ingredients(recipe, multiplier)
     local items = {}
     for _, ingredients in ipairs(recipe.ingredients) do
@@ -70,32 +60,32 @@ function get_recipe_ingredients(recipe, multiplier)
     return items
 end
 
-script.on_event("RecipeLogisticRequest__increase-request-result", function(event)
-    local character = get_valid_event_character(event)
-    if character ~= nil then
-        modify_requests(character, {[event.selected_prototype.name] = 1})
+function create_event_handler(use_result, multiplier)
+    function handler(event)
+        local player = game.players[event.player_index]
+        if event.selected_prototype and event.selected_prototype.base_type == "recipe" then
+            if player ~= nil and player.valid and player.character ~= nil and player.character.valid then
+                if use_result then
+                    modify_requests(player.character, {[event.selected_prototype.name] = multiplier})
+                else
+                    local recipe = character.force.recipes[event.selected_prototype.name]
+                    modify_requests(player.character, get_recipe_ingredients(recipe, multiplier))
+                end
+            end
+        end
     end
-end)
+    
+    return handler
+end
 
-script.on_event("RecipeLogisticRequest__decrease-request-result", function(event)
-    local character = get_valid_event_character(event)
-    if character ~= nil then
-        modify_requests(character, {[event.selected_prototype.name] = -1})
-    end
-end)
+script.on_event("RecipeLogisticRequest__increase-request-result", create_event_handler(true, 1))
+script.on_event("RecipeLogisticRequest__increase-request-result-5", create_event_handler(true, 5))
 
-script.on_event("RecipeLogisticRequest__increase-request-ingredients", function(event)
-    local character = get_valid_event_character(event)
-    if character ~= nil then
-        local recipe = character.force.recipes[event.selected_prototype.name]
-        modify_requests(character, get_recipe_ingredients(recipe, 1))
-    end
-end)
+script.on_event("RecipeLogisticRequest__decrease-request-result", create_event_handler(true, -1))
+script.on_event("RecipeLogisticRequest__decrease-request-result-5", create_event_handler(true, -5))
 
-script.on_event("RecipeLogisticRequest__decrease-request-ingredients", function(event)
-    local character = get_valid_event_character(event)
-    if character ~= nil then
-        local recipe = character.force.recipes[event.selected_prototype.name]
-        modify_requests(character, get_recipe_ingredients(recipe, -1))
-    end
-end)
+script.on_event("RecipeLogisticRequest__increase-request-ingredients", create_event_handler(false, 1))
+script.on_event("RecipeLogisticRequest__increase-request-ingredients-5", create_event_handler(false, 5))
+
+script.on_event("RecipeLogisticRequest__decrease-request-ingredients", create_event_handler(false, -1))
+script.on_event("RecipeLogisticRequest__decrease-request-ingredients-5", create_event_handler(false, -5))
