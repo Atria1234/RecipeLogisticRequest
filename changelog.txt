@@ -1,10 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.1
+Date: 2023-01-07
+  Bugfix:
+    - Fixed info in changelog
+---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2023-01-04
   Info:
     - Initial release
   Feature:
-    - "CTRL + ALT + Left mouse button" increases personal logistic requests of hovered over recipe result by one
-    - "CTRL + ALT + Right mouse button" decreases personal logistic requests of hovered over recipe result by one
-    - "CTRL + SHIFT + ALT + Left mouse button" increases personal logistic requests of hovered over recipe ingredients by one recipe's worth
-    - "CTRL + SHIFT + ALT + Right mouse button" decreases personal logistic requests of hovered over recipe ingredients by one recipe's worth
+    - "ALT + Left mouse button" increases personal logistic requests of hovered over recipe result by one
+    - "ALT + Right mouse button" decreases personal logistic requests of hovered over recipe result by one
+    - "CTRL + ALT + Left mouse button" increases personal logistic requests of hovered over recipe ingredients by one recipe's worth
+    - "CTRL + ALT + Right mouse button" decreases personal logistic requests of hovered over recipe ingredients by one recipe's worth
