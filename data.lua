@@ -36,7 +36,7 @@ data:extend(
             type = "custom-input",
             name = "RecipeLogisticRequest__increase-request-ingredients",
             order = "RecipeLogisticRequest__05",
-            key_sequence = "CTRL + ALT + mouse-button-1",
+            key_sequence = "CONTROL + ALT + mouse-button-1",
             consuming = "game-only",
             include_selected_prototype = true
         },
@@ -44,7 +44,7 @@ data:extend(
             type = "custom-input",
             name = "RecipeLogisticRequest__increase-request-ingredients-5",
             order = "RecipeLogisticRequest__06",
-            key_sequence = "CTRL + ALT + mouse-button-2",
+            key_sequence = "CONTROL + ALT + mouse-button-2",
             consuming = "game-only",
             include_selected_prototype = true
         },
