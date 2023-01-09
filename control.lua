@@ -31,6 +31,10 @@ function modify_requests(character, items)
     -- create new requests
     local next = next
     for slot = 1, 65536 do
+        if next(items) == nil then
+            break
+        end
+
         local request = character.get_personal_logistic_slot(slot)
         if request.name == nil then
             local name, count = next(items)
@@ -43,18 +47,14 @@ function modify_requests(character, items)
             end
             items[name] = nil
         end
-
-        if next(items) == nil then
-            break
-        end
     end
 end
 
-function get_recipe_ingredients(recipe, multiplier)
+function get_recipe_requests(ingredients_or_products, multiplier)
     local items = {}
-    for _, ingredients in ipairs(recipe.ingredients) do
-        if ingredients.type == "item" then
-            items[ingredients.name] = multiplier * ingredients.amount
+    for _, item in ipairs(ingredients_or_products) do
+        if item.type == "item" then
+            items[item.name] = multiplier * (item.amount or 1)
         end
     end
     return items
@@ -65,16 +65,16 @@ function create_event_handler(use_result, multiplier)
         local player = game.players[event.player_index]
         if event.selected_prototype and event.selected_prototype.base_type == "recipe" then
             if player ~= nil and player.valid and player.character ~= nil and player.character.valid then
+                local recipe = player.character.force.recipes[event.selected_prototype.name]
                 if use_result then
-                    modify_requests(player.character, {[event.selected_prototype.name] = multiplier})
+                    modify_requests(player.character, get_recipe_requests(recipe.products, multiplier))
                 else
-                    local recipe = character.force.recipes[event.selected_prototype.name]
-                    modify_requests(player.character, get_recipe_ingredients(recipe, multiplier))
+                    modify_requests(player.character, get_recipe_requests(recipe.ingredients, multiplier))
                 end
             end
         end
     end
-    
+
     return handler
 end
 

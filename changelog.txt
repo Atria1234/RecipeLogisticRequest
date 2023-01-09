@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.1.1
+Date: 2023-01-08
+  Bugfix:
+    - Fixed copy paste error in locale file.
+    - Fixed crash caused by incorrect refactoring (trying to index undefined variable "character").
+    - Fixed crash when only modifying existing requests (trying to compare nil with a number).
+    - Fixed crash when recipe and its result don't share a name.
+    - Fixed not all recipe results being requested if there are multiple of them.
+---------------------------------------------------------------------------------------------------
 Version: 1.1.0
 Date: 2023-01-07
   Feature:
