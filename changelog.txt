@@ -1,12 +1,17 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.0
+Date: 2023-04-11
+  Features:
+    - Added support for requesting by clicking on items and entities. Works only when requesting final results, requesting item/entity recipe doesn't do anything.
+---------------------------------------------------------------------------------------------------
 Version: 1.1.2
 Date: 2023-01-09
-  Bugfix:
+  Bugfixes:
     - Fixed incorrect syntax of key bindings (using CTRL instead of CONTROL).
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.1
 Date: 2023-01-08
-  Bugfix:
+  Bugfixes:
     - Fixed copy paste error in locale file.
     - Fixed crash caused by incorrect refactoring (trying to index undefined variable "character").
     - Fixed crash when only modifying existing requests (trying to compare nil with a number).
@@ -15,21 +20,21 @@ Date: 2023-01-08
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.0
 Date: 2023-01-07
-  Feature:
+  Features:
     - Added key bindings for increase/decrease request of result/ingredients by 5
-  Bugfix:
+  Bugfixes:
     - Modified default key bindings to behave more like normal crafting, decreasing actions doesn't have default key bindings anymore.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Date: 2023-01-07
-  Bugfix:
+  Bugfixes:
     - Fixed info in changelog
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2023-01-04
   Info:
     - Initial release
-  Feature:
+  Features:
     - "ALT + Left mouse button" increases personal logistic requests of hovered over recipe result by one
     - "ALT + Right mouse button" decreases personal logistic requests of hovered over recipe result by one
     - "CTRL + ALT + Left mouse button" increases personal logistic requests of hovered over recipe ingredients by one recipe's worth
