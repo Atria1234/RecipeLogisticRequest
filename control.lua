@@ -1,52 +1,64 @@
 local infinity = 4294967295
 local max_request_slot = 65536
 
-local function modify_requests(character, requested_items)
-    -- modify already existing requests
-    for slot = 1, character.request_slot_count do
-        local request = character.get_personal_logistic_slot(slot)
-        local requested_count = requested_items[request.name]
-        if request.name ~= nil and requested_count ~= nil then
-            if requested_count > 0 then
-                request.min = request.min + requested_count
-                request.max = math.min(request.max + requested_count, infinity)
-
-                character.set_personal_logistic_slot(slot, request)
-            else
-                if request.min + requested_count <= 0 and (request.max + requested_count <= 0 or request.max == infinity) then
-                    character.clear_personal_logistic_slot(slot)
-                else
-                    request.min = math.max(request.min + requested_count, 0)
-                    request.max = request.max < infinity and math.min(request.max + requested_count, infinity) or infinity
-
-                    character.set_personal_logistic_slot(slot, request)
-                end
-            end
-
-            requested_items[request.name] = nil
-        end
+local function modify_requests(character, requested_items)      
+    local requester_point = character.get_requester_point()
+    -- If logistics hasn't been researched then this will return nil and we can't do anything
+    if requester_point == nil then
+        return
     end
+    local section_name = "automatic-recipe-requests"
+    local chosen_section = nil
 
-    -- create new requests
-    for slot = 1, max_request_slot do
-        if next(requested_items) == nil then
+    for i = 1, requester_point.sections_count do
+        local section = requester_point.get_section(i)
+        if section.group == section_name then
+            chosen_section = section
             break
-        end
+        end        
+    end
 
-        local request = character.get_personal_logistic_slot(slot)
-        if request.name == nil then
-            local requested_name, requested_count = next(requested_items)
-            if requested_count > 0 then
-                character.set_personal_logistic_slot(slot, {
-                    name = requested_name,
-                    min = requested_count,
-                    max = nil
-                })
-            end
-
-            requested_items[requested_name] = nil
+    if chosen_section == nil then
+        chosen_section = requester_point.add_section(section_name)
+        for i = 1, chosen_section.filters_count do
+            chosen_section.clear_slot(i)
         end
     end
+
+    local unused_slots = {}
+
+    for i = 1, chosen_section.filters_count do
+        local filter = chosen_section.filters[i]
+        if filter and filter.value and requested_items[filter.value.name] then
+            local item = filter.value.name            
+            local updated_filter = {
+                value = item,
+                min = filter.min + requested_items[item],
+            }
+            if filter.max then
+                updated_filter.max = math.min(filter.max + requested_items[item], infinity)
+            end
+            chosen_section.set_slot(i, updated_filter)
+            requested_items[filter.value.name] = nil
+        elseif filter == nil or filter.value == nil then
+            table.insert(unused_slots, i)
+        end
+    end
+
+    for item, count in pairs(requested_items) do
+        local slot_index = table.remove(unused_slots, 1)
+        local filter = {
+            value = item,
+            min = count,
+            max = nil
+        }        
+        if slot_index then
+            chosen_section.set_slot(slot_index, filter)
+        else
+            chosen_section.set_slot(chosen_section.filters_count + 1, filter)
+        end
+    end
+
 end
 
 local function get_recipe_requests(ingredients_or_products, multiplier)
