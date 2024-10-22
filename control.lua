@@ -1,50 +1,63 @@
-local infinity = 4294967295
-local max_request_slot = 65536
+require('init')
 
-local function modify_requests(character, requested_items)
-    -- modify already existing requests
-    for slot = 1, character.request_slot_count do
-        local request = character.get_personal_logistic_slot(slot)
-        local requested_count = requested_items[request.name]
-        if request.name ~= nil and requested_count ~= nil then
-            if requested_count > 0 then
-                request.min = request.min + requested_count
-                request.max = math.min(request.max + requested_count, infinity)
-
-                character.set_personal_logistic_slot(slot, request)
-            else
-                if request.min + requested_count <= 0 and (request.max + requested_count <= 0 or request.max == infinity) then
-                    character.clear_personal_logistic_slot(slot)
-                else
-                    request.min = math.max(request.min + requested_count, 0)
-                    request.max = request.max < infinity and math.min(request.max + requested_count, infinity) or infinity
-
-                    character.set_personal_logistic_slot(slot, request)
-                end
-            end
-
-            requested_items[request.name] = nil
+local function get_request_logistic_section(player, logistic_point, or_create)
+    local section_name = RecipeLogisticRequest.get_logistic_section_name(player)
+    for _, section in ipairs(logistic_point.sections) do
+        if section.group == section_name then
+            return section
         end
     end
 
-    -- create new requests
-    for slot = 1, max_request_slot do
-        if next(requested_items) == nil then
-            break
+    if or_create then
+        local section = logistic_point.add_section(section_name)
+        for i = 1, section.filters_count do
+            section.clear_slot(i)
+        end
+        return section
+    end
+
+    return nil
+end
+
+local function modify_requests(player, requested_items)
+    player.play_sound({path='utility/inventory_click'})
+
+    local character = player.character
+
+    local logistic_point = character.get_logistic_point(defines.logistic_member_index.character_requester)
+    if logistic_point then
+        local section = get_request_logistic_section(player, logistic_point, true)
+
+        for i, request in ipairs(section.filters) do
+            if request.value then
+                local requested_name = request.value.name
+                local requested_count = requested_items[requested_name]
+                if requested_count then
+                    request.min = request.min + requested_count
+
+                    if request.min > 0 then
+                        section.set_slot(i, request)
+                    else
+                        section.clear_slot(i)
+                    end
+
+                    requested_items[requested_name] = nil
+                end
+            end
         end
 
-        local request = character.get_personal_logistic_slot(slot)
-        if request.name == nil then
-            local requested_name, requested_count = next(requested_items)
+        -- create new requests
+        local i = 1
+        for requested_name, requested_count in pairs(requested_items) do
             if requested_count > 0 then
-                character.set_personal_logistic_slot(slot, {
-                    name = requested_name,
-                    min = requested_count,
-                    max = nil
+                while section.get_slot(i).value do
+                    i = i + 1
+                end
+                section.set_slot(i, {
+                    value = requested_name,
+                    min = requested_count
                 })
             end
-
-            requested_items[requested_name] = nil
         end
     end
 end
@@ -60,16 +73,54 @@ local function get_recipe_requests(ingredients_or_products, multiplier)
     return items
 end
 
+local function create_recipe_flying_text(player, use_result, count)
+    player.create_local_flying_text({
+        text = {
+            'flying-text.RecipeLogisticRequest__request-'..(count > 0 and 'increased' or 'decreased'),
+            {
+                use_result and 'flying-text.RecipeLogisticRequest__recipe-products' or 'flying-text.RecipeLogisticRequest__recipe-ingredients'
+            },
+            math.abs(count)
+        },
+        create_at_cursor = true
+    })
+end
+
+local function create_item_flying_text(player, item_name, count)
+    player.create_local_flying_text({
+        text = {
+            'flying-text.RecipeLogisticRequest__request-'..(count > 0 and 'increased' or 'decreased'),
+            {
+                '?',
+                {'item-name.'..item_name},
+                {'entity-name.'..item_name},
+                item_name
+            },
+            math.abs(count)
+        },
+        create_at_cursor = true
+    })
+end
+
 local function create_event_handler(use_result, multiplier)
     local function handler(event)
         local player = game.players[event.player_index]
         if player ~= nil and player.valid and player.character ~= nil and player.character.valid then
             if event.selected_prototype and event.selected_prototype.base_type == "recipe" then
                 local recipe = player.character.force.recipes[event.selected_prototype.name]
-                modify_requests(player.character, get_recipe_requests(use_result and recipe.products or recipe.ingredients, multiplier))
+                local requests = get_recipe_requests(use_result and recipe.products or recipe.ingredients, multiplier)
+                if table_size(requests) == 1 then
+                    create_item_flying_text(player, next(requests))
+                else
+                    create_recipe_flying_text(player, use_result, multiplier)
+                end
+
+                modify_requests(player, requests)
             elseif event.selected_prototype and event.selected_prototype.base_type == "item" then
                 if use_result then
-                    modify_requests(player.character, {
+                    create_item_flying_text(player, event.selected_prototype.name, multiplier)
+
+                    modify_requests(player, {
                         [event.selected_prototype.name] = multiplier
                     })
                 end
@@ -83,9 +134,11 @@ local function create_event_handler(use_result, multiplier)
                 end
 
                 if use_result then
-                    local items_to_place_this = game.entity_prototypes[entity_name].items_to_place_this
+                    local items_to_place_this = prototypes.entity[entity_name].items_to_place_this
                     if items_to_place_this and table_size(items_to_place_this) == 1 then
-                        modify_requests(player.character, {
+                        create_item_flying_text(player, items_to_place_this[1].name, multiplier)
+
+                        modify_requests(player, {
                             [items_to_place_this[1].name] = multiplier
                         })
                     end
@@ -97,14 +150,12 @@ local function create_event_handler(use_result, multiplier)
     return handler
 end
 
-script.on_event("RecipeLogisticRequest__increase-request-result", create_event_handler(true, 1))
-script.on_event("RecipeLogisticRequest__increase-request-result-5", create_event_handler(true, 5))
+script.on_event(RecipeLogisticRequest.hotkey_names.request_increase_1_result, create_event_handler(true, 1))
+script.on_event(RecipeLogisticRequest.hotkey_names.request_increase_5_result, create_event_handler(true, 5))
+script.on_event(RecipeLogisticRequest.hotkey_names.request_decrease_1_result, create_event_handler(true, -1))
+script.on_event(RecipeLogisticRequest.hotkey_names.request_decrease_5_result, create_event_handler(true, -5))
 
-script.on_event("RecipeLogisticRequest__decrease-request-result", create_event_handler(true, -1))
-script.on_event("RecipeLogisticRequest__decrease-request-result-5", create_event_handler(true, -5))
-
-script.on_event("RecipeLogisticRequest__increase-request-ingredients", create_event_handler(false, 1))
-script.on_event("RecipeLogisticRequest__increase-request-ingredients-5", create_event_handler(false, 5))
-
-script.on_event("RecipeLogisticRequest__decrease-request-ingredients", create_event_handler(false, -1))
-script.on_event("RecipeLogisticRequest__decrease-request-ingredients-5", create_event_handler(false, -5))
+script.on_event(RecipeLogisticRequest.hotkey_names.request_increase_1_ingredients, create_event_handler(false, 1))
+script.on_event(RecipeLogisticRequest.hotkey_names.request_increase_5_ingredients, create_event_handler(false, 5))
+script.on_event(RecipeLogisticRequest.hotkey_names.request_decrease_1_ingredients, create_event_handler(false, -1))
+script.on_event(RecipeLogisticRequest.hotkey_names.request_decrease_5_ingredients, create_event_handler(false, -5))
